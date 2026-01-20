@@ -4,7 +4,7 @@ using Sister_Communication.Data.Entities;
 
 namespace Sister_Communication.Data.Configurations;
 
-public class SearchResultConfiguration : IEntityTypeConfiguration<SearchResult>
+public sealed class SearchResultConfiguration : IEntityTypeConfiguration<SearchResult>
 {
     public void Configure(EntityTypeBuilder<SearchResult> builder)
     {

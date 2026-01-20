@@ -3,24 +3,21 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Sister_Communication.Data.Entities;
 
-public class SearchResult
+public sealed class SearchResult
 {
     
-    public int Id { get; set; }
+    public int Id { get; init; }
 
-    // The search term entered by the user
-    public string Query { get; set; } = null!;
+    public string Query { get; init; } = null!;
 
     [Required]
-    public string Url { get; set; } = null!;
+    public string Url { get; init; } = null!;
 
-    // Optional but useful (from Google API)
-    public string? Title { get; set; }
-    public string? Snippet { get; set; }
-    public string? DisplayLink { get; set; }
+    public string? Title { get; init; }
+    public string? Snippet { get; init; }
+    public string? DisplayLink { get; init; }
 
-    // Google ranking (1–100)
-    public int Position { get; set; }
+    public int Position { get; init; }
 
-    public DateTime FetchedAtUtc { get; set; }
+    public DateTime FetchedAtUtc { get; init; }
 }

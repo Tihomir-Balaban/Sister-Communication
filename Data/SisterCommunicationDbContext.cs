@@ -3,7 +3,7 @@ using Sister_Communication.Data.Entities;
 using Sister_Communication.Data.Configurations;
              
 namespace Sister_Communication.Data;
-public class SisterCommunicationDbContext(DbContextOptions<SisterCommunicationDbContext> options) : DbContext(options)
+public sealed class SisterCommunicationDbContext(DbContextOptions<SisterCommunicationDbContext> options) : DbContext(options)
 {
     public DbSet<SearchResult> SearchResults => Set<SearchResult>();
 
