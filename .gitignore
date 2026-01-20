@@ -4,5 +4,6 @@ obj/
 riderModule.iml
 /_ReSharper.Caches/
 development.xml
-/.idea/.idea.Sister Communication/.idea/deployment.xml
+.idea/
 /Sister Communication.sln.DotSettings.user
+
