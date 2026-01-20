@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sister Communication", "Sister Communication.csproj", "{77953FB2-2BB9-402D-95B6-D7C77F199331}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{77953FB2-2BB9-402D-95B6-D7C77F199331}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77953FB2-2BB9-402D-95B6-D7C77F199331}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77953FB2-2BB9-402D-95B6-D7C77F199331}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77953FB2-2BB9-402D-95B6-D7C77F199331}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
