@@ -1,7 +1,16 @@
+using Microsoft.EntityFrameworkCore;
+using Sister_Communication.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+// EF Core + SQL Server
+builder.Services.AddDbContext<SisterCommunicationDbContext>(options =>
+{
+    var cs = builder.Configuration.GetConnectionString("SisterCommunicationDb");
+    options.UseSqlServer(cs);
+});
 
 var app = builder.Build();
 
