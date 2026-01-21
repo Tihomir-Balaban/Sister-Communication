@@ -3,6 +3,7 @@ using Sister_Communication.DTOs;
 using Sister_Communication.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Sister_Communication.Data;
+using DU = Sister_Communication.Static.DataUtils;
 
 namespace Sister_Communication.Services;
 
@@ -99,5 +100,63 @@ public sealed class SearchResultStoreService(SisterCommunicationDbContext dbCont
         return q
             .OrderBy(x => x.Position)
             .ToListAsync(cancellationToken);
+    }
+
+    /// Attempts to find cached results in the database that match or are closely related to the specified query.
+    /// If an exact match exists, it retrieves the results for that query and returns them. If no exact match is found,
+    /// it searches for related queries, evaluates their relevance, and retrieves the results for the most relevant match,
+    /// if any. Returns null if no relevant results are found.
+    /// <param name="query">The query string to search for in the database. It will be trimmed of whitespace.</param>
+    /// <param name="cancellationToken">A token that can be used to cancel the asynchronous operation.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains a tuple with the matched query
+    /// and a list of <c>SearchResult</c> objects, or null if no relevant results are found.</returns>
+    public async Task<(string MatchedQuery, List<SearchResult> Results, bool ExactExists)?> TryGetCachedResultsAsync(
+    string query,
+    CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            return null;
+
+        query = query.Trim();
+
+        var exactExists = await _dbContext.SearchResults
+            .AnyAsync(x => x.Query == query, cancellationToken);
+
+        if (exactExists)
+        {
+            var exactResults = await GetResultsForQueryAsync(query, cancellationToken);
+            return (query, exactResults, exactExists);
+        }
+
+        var candidates = await _dbContext.SearchResults
+            .Where(x =>
+                EF.Functions.Like(x.Query, $"%{query}%") ||
+                EF.Functions.Like(query, $"%{x.Query}%"))
+            .GroupBy(x => x.Query)
+            .Select(g => new
+            {
+                Query = g.Key,
+                Latest = g.Max(r => r.FetchedAtUtc)
+            })
+            .ToListAsync(cancellationToken);
+
+        if (candidates.Count == 0)
+            return null;
+
+        var best = candidates
+            .Select(x => new
+            {
+                x.Query,
+                x.Latest,
+                Score = DU.Score(query, x.Query),
+                LengthDiff = Math.Abs(x.Query.Length - query.Length)
+            })
+            .OrderBy(x => x.Score)
+            .ThenBy(x => x.LengthDiff)
+            .ThenByDescending(x => x.Latest)
+            .First();
+
+        var results = await GetResultsForQueryAsync(best.Query, cancellationToken);
+        return (best.Query, results, exactExists);
     }
 }

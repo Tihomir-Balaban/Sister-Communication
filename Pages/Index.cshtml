@@ -3,51 +3,131 @@
 
 <h1>Sister Communication</h1>
 
-<!-- FORM 1: Google Search -->
-<form method="post" asp-page-handler="Search">
-    <label>Google search term</label><br />
-    <input asp-for="SearchTerm" />
-    <span asp-validation-for="SearchTerm"></span>
-    <button type="submit">Search Google</button>
-</form>
+<form method="post">
+    <div style="margin-bottom: 12px;">
+        <label>Google search term</label><br />
+        <input asp-for="SearchTerm" />
+        <button type="submit" asp-page-handler="Search">Search</button>
+        <span asp-validation-for="SearchTerm"></span>
+    </div>
 
-<hr />
+    <div style="margin-bottom: 12px;">
+        <label>Filter URLs in DB (SQL LIKE)</label><br />
+        <input asp-for="DbFilterTerm" />
+        <button type="submit" asp-page-handler="DbFilter">Filter</button>
+        <button type="submit" asp-page-handler="ClearDbFilter">Clear DB filter</button>
+        <span asp-validation-for="DbFilterTerm"></span>
+    </div>
 
-<!-- FORM 2: SQL LIKE filter -->
-<form method="post" asp-page-handler="DbFilter">
-    <label>Filter URLs in DB (SQL LIKE)</label><br />
-    <input asp-for="DbFilterTerm" />
-
-    <!-- Persist which query we're filtering -->
     <input type="hidden" asp-for="CurrentQuery" />
 
-    <span asp-validation-for="DbFilterTerm"></span>
-    <button type="submit">Filter (SQL LIKE)</button>
+    <hr />
+
+    <div style="margin: 12px 0;">
+        <label>Realtime filter (frontend only)</label><br />
+        <input id="realtimeFilter" type="text" placeholder="Type to filter displayed results..." />
+        <button id="clearRealtimeFilter" type="button">Clear filter</button>
+        <button id="toggleSort" type="button" data-sort="asc">Sort A → Z</button>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+    {
+        <div style="margin: 8px 0; font-weight: bold;">
+            @Model.StatusMessage
+        </div>
+    }
+
+    @if (Model.Results.Any())
+    {
+        <table id="resultsTable">
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Title</th>
+                <th>URL</th>
+                <th>DisplayLink</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var r in Model.Results)
+            {
+                <tr>
+                    <td>@r.Position</td>
+                    <td>@r.Title</td>
+                    <td><a href="@r.Url" target="_blank">@r.Url</a></td>
+                    <td>@r.DisplayLink</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
 </form>
 
-<hr />
-
-@if (Model.Results.Any())
+@section Scripts
 {
-    <table>
-        <thead>
-        <tr>
-            <th>#</th>
-            <th>Title</th>
-            <th>URL</th>
-            <th>DisplayLink</th>
-        </tr>
-        </thead>
-        <tbody>
-        @foreach (var r in Model.Results)
-        {
-            <tr>
-                <td>@r.Position</td>
-                <td>@r.Title</td>
-                <td><a href="@r.Url" target="_blank">@r.Url</a></td>
-                <td>@r.DisplayLink</td>
-            </tr>
-        }
-        </tbody>
-    </table>
+    <script>
+        (function () {
+            const filterInput = document.getElementById('realtimeFilter');
+            const clearBtn = document.getElementById('clearRealtimeFilter');
+            const sortBtn = document.getElementById('toggleSort');
+            const table = document.getElementById('resultsTable');
+
+            if (!table) return;
+
+            const tbody = table.querySelector('tbody');
+            const getRows = () => Array.from(tbody.querySelectorAll('tr'));
+
+            function rowText(row) {
+                return row.innerText.toLowerCase();
+            }
+
+            function applyFilter() {
+                const term = (filterInput.value || '').trim().toLowerCase();
+                const rows = getRows();
+
+                if (!term) {
+                    rows.forEach(r => r.style.display = '');
+                    return;
+                }
+
+                rows.forEach(r => {
+                    r.style.display = rowText(r).includes(term) ? '' : 'none';
+                });
+            }
+
+            function clearFilter() {
+                filterInput.value = '';
+                applyFilter();
+            }
+
+            function sortRows(desc) {
+                const rows = getRows();
+
+                rows.sort((a, b) => {
+                    const aUrl = (a.cells[2]?.innerText || '').toLowerCase();
+                    const bUrl = (b.cells[2]?.innerText || '').toLowerCase();
+
+                    if (aUrl < bUrl) return desc ? 1 : -1;
+                    if (aUrl > bUrl) return desc ? -1 : 1;
+                    return 0;
+                });
+
+                rows.forEach(r => tbody.appendChild(r));
+            }
+
+            function toggleSort() {
+                const current = sortBtn.getAttribute('data-sort') || 'asc';
+                const nextIsDesc = current === 'asc';
+
+                sortRows(nextIsDesc);
+
+                sortBtn.setAttribute('data-sort', nextIsDesc ? 'desc' : 'asc');
+                sortBtn.textContent = nextIsDesc ? 'Sort Z → A' : 'Sort A → Z';
+            }
+
+            filterInput.addEventListener('input', applyFilter);
+            clearBtn.addEventListener('click', clearFilter);
+            sortBtn.addEventListener('click', toggleSort);
+        })();
+    </script>
 }

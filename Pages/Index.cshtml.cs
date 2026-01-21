@@ -25,6 +25,8 @@ public sealed class IndexModel(
     public string? CurrentQuery { get; set; }
 
     public List<SearchResult> Results { get; private set; } = new();
+    
+    public string? StatusMessage { get; private set; }
 
     /// <summary>
     /// Handles the GET request for the page and performs any necessary initialization or setup.
@@ -34,14 +36,11 @@ public sealed class IndexModel(
     public Task OnGetAsync() => Task.CompletedTask;
 
     /// <summary>
-    /// Handles the search postback by validating the search term, fetching results using the search API,
-    /// and updating the search result store with the latest results.
+    /// Handles the POST request for performing a search operation using the specified search term.
+    /// Retrieves search results from a cached store or an external service and updates the page with the results.
     /// </summary>
-    /// <param name="cancellationToken">Token for canceling the asynchronous operation.</param>
-    /// <returns>
-    /// An <see cref="IActionResult"/> that renders the current page with the updated search results.
-    /// Returns the current page with a validation error if the search term is not provided.
-    /// </returns>
+    /// <param name="cancellationToken">A cancellation token used to propagate notifications that the operation should be canceled.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains an IActionResult to render the appropriate response.</returns>
     public async Task<IActionResult> OnPostSearchAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(SearchTerm))
@@ -52,13 +51,24 @@ public sealed class IndexModel(
 
         var query = SearchTerm.Trim();
         
+        var cached = await _store.TryGetCachedResultsAsync(query, cancellationToken);
+        if (cached is not null)
+        {
+            CurrentQuery = cached.Value.MatchedQuery;
+            Results.AddRange(cached.Value.Results);
+            
+            if (cached.Value.ExactExists)
+                return Page();
+        }
+        
         var items = await serpApi.SearchAsync(query, maxResults: 100, cancellationToken);
 
         await _store.ReplaceResultsForQueryAsync(query, items, cancellationToken);
 
         CurrentQuery = query;
-        Results = await _store.GetResultsForQueryAsync(query, cancellationToken);
+        var results = await _store.GetResultsForQueryAsync(query, cancellationToken);
 
+        Results.AddRange(Results);
         return Page();
     }
 
@@ -75,9 +85,31 @@ public sealed class IndexModel(
             ModelState.AddModelError(nameof(DbFilterTerm), "Please enter a filter term.");
             return Page();
         }
-
+        
+        if (string.IsNullOrWhiteSpace(CurrentQuery))
+        {
+            ModelState.AddModelError(string.Empty, "Please run a search first so there are results to filter.");
+            return Page();
+        }
+        
         Results = await _store.FilterResultsAsync(CurrentQuery, DbFilterTerm, cancellationToken);
 
+        return Page();
+    }
+
+    /// <summary>
+    /// Handles the POST request to clear the database filter term for the current query.
+    /// Resets the database filter and re-fetches the full results for the current query from the store.
+    /// </summary>
+    /// <param name="ct">A cancellation token used to propagate notifications that the operation should be canceled.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains an IActionResult to render the appropriate response.</returns>
+    public async Task<IActionResult> OnPostClearDbFilterAsync(CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(CurrentQuery))
+            return Page();
+
+        DbFilterTerm = null;
+        Results = await _store.GetResultsForQueryAsync(CurrentQuery, ct);
         return Page();
     }
 }
