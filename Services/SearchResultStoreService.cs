@@ -21,9 +21,19 @@ public sealed class SearchResultStoreService(SisterCommunicationDbContext dbCont
         
         await using var tx = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-        await _dbContext.SearchResults
+        #region TODO
+        // TODO: Check if I want this comment or the other not sure right now, good luck future Tihomir!
+        // await _dbContext.SearchResults
+        //     .Where(x => x.Query == query)
+        //     .ExecuteDeleteAsync(cancellationToken);
+        
+        var oldRows = await _dbContext.SearchResults
             .Where(x => x.Query == query)
-            .ExecuteDeleteAsync(cancellationToken);
+            .ToListAsync(cancellationToken);
+
+        _dbContext.SearchResults.RemoveRange(oldRows);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        #endregion
 
         var now = DateTime.UtcNow;
 

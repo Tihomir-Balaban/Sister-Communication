@@ -8,3 +8,7 @@
     <h1 class="display-4">Welcome</h1>
     <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
 </div>
+
+var oldRows = await _db.SearchResults.Where(x => x.Query == query).ToListAsync(ct);
+_db.SearchResults.RemoveRange(oldRows);
+await _db.SaveChangesAsync(ct);
