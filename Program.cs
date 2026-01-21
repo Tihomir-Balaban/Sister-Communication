@@ -24,6 +24,7 @@ builder.Services.AddHttpClient<GoogleSearchService>(client =>
 });
     
 builder.Services.AddScoped<IGoogleSearchService, GoogleSearchService>();
+builder.Services.AddScoped<ISearchResultStoreService, SearchResultStoreService>();
 
 var app = builder.Build();
 

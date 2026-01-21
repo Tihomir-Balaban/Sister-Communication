@@ -11,7 +11,7 @@ public sealed class SearchResult
     public string Query { get; init; } = null!;
 
     [Required]
-    public string Url { get; init; } = null!;
+    public string? Url { get; init; } = null!;
 
     public string? Title { get; init; }
     public string? Snippet { get; init; }
