@@ -7,36 +7,32 @@ namespace Sister_Communication.Pages;
 
 public sealed class PrivacyModel(
     ILogger<PrivacyModel> logger,
-    IGoogleSearchService google,
+    ISerpApiSearchService serpApi,
     ISearchResultStoreService store) : PageModel
 {
     private readonly ILogger<PrivacyModel> _logger = logger;
-    private readonly IGoogleSearchService _google = google;
+    private readonly ISerpApiSearchService _serpApi = serpApi;
     private readonly ISearchResultStoreService _store = store;
     
     public string? SearchTerm { get; set; }
 
     public List<SearchResult> Results { get; private set; } = new();
 
-    /// Handles the GET request for the Privacy page.
-    /// This method is invoked when the user navigates to the Privacy page
-    /// without submitting any form data or initiating a specific action.
-    /// It performs any necessary initialization for the page and prepares
-    /// the related view or data, if applicable.
-    /// <returns>A completed Task representing the execution of the method.</returns>
-    public Task OnGetAsync() => Task.CompletedTask;
 
     /// <summary>
-    /// Handles the search functionality. This method processes the user-provided search term,
-    /// performs a search via the Google search service, stores the results, and retrieves the
-    /// results to display on the page.
+    /// Handles GET requests for the Privacy page.
     /// </summary>
-    /// <param name="cancellationToken">
-    /// A <see cref="CancellationToken"/> to observe while performing asynchronous operations.
-    /// </param>
+    /// <returns>A completed task representing the operation.</returns>
+    public Task OnGetAsync() => Task.CompletedTask;
+
+
+    /// <summary>
+    /// Handles the POST request for the search action by retrieving results based on the specified search term
+    /// and updating the stored search results.
+    /// </summary>
+    /// <param name="cancellationToken">A token to observe while waiting for the task to complete, enabling cancellation of the operation.</param>
     /// <returns>
-    /// An <see cref="IActionResult"/> representing the result of the operation.
-    /// Returns the current page if successful or if validation errors occur.
+    /// An <see cref="IActionResult"/> that renders the page either with model errors (if the input is invalid) or the updated search results.
     /// </returns>
     public async Task<IActionResult> OnPostSearchAsync(CancellationToken cancellationToken)
     {
@@ -48,7 +44,7 @@ public sealed class PrivacyModel(
 
         var query = SearchTerm.Trim();
 
-        var items = await _google.SearchAsync(query, maxResults: 100, cancellationToken);
+        var items = await _serpApi.SearchAsync(query, maxResults: 100, cancellationToken);
 
         await _store.ReplaceResultsForQueryAsync(query, items, cancellationToken);
 

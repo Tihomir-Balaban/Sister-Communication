@@ -7,7 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Services
 builder.Services.AddRazorPages();
-builder.Services.Configure<Sister_Communication.Options.GoogleOptions>(builder.Configuration.GetSection("Google"));
+builder.Services.Configure<Sister_Communication.Options.SerpApiOptions>(builder.Configuration.GetSection("SerpApi"));
 
 builder.Services.AddDbContext<SisterCommunicationDbContext>(options =>
 {
@@ -15,14 +15,13 @@ builder.Services.AddDbContext<SisterCommunicationDbContext>(options =>
     options.UseSqlServer(connectionString);
 });
 
-builder.Services.AddHttpClient<GoogleSearchService>(client =>
+builder.Services.AddHttpClient<ISerpApiSearchService, SerpApiSearchService>(client =>
 {   
-    client.BaseAddress = new Uri("https://www.googleapis.com/");
+    client.BaseAddress = new Uri("https://serpapi.com/");
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
 // DI
-builder.Services.AddScoped<IGoogleSearchService, GoogleSearchService>();
 builder.Services.AddScoped<ISearchResultStoreService, SearchResultStoreService>();
 
 var app = builder.Build();

@@ -2,7 +2,7 @@
 
 namespace Sister_Communication.DTOs;
 
-public sealed class GoogleSearchItemDto
+public sealed class SerpApiOrganicResultDto
 {
     [JsonPropertyName("position")]
     public required int Position { get; init; }
@@ -15,7 +15,4 @@ public sealed class GoogleSearchItemDto
 
     [JsonPropertyName("snippet")]
     public string? Snippet { get; init; }
-
-    [JsonPropertyName("displayLink")]
-    public string? DisplayLink { get; init; }
 }

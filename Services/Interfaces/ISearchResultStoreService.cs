@@ -7,7 +7,7 @@ public interface ISearchResultStoreService
 {
     Task ReplaceResultsForQueryAsync(
         string query,
-        IReadOnlyList<GoogleSearchItemDto> items,
+        IReadOnlyList<SerpApiOrganicResultDto> items,
         CancellationToken cancellationToken = default);
 
     Task<List<SearchResult>> GetResultsForQueryAsync(

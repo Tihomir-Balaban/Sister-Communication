@@ -2,17 +2,17 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Sister_Communication.Data;
 using Sister_Communication.Data.Entities;
+using Sister_Communication.Services;
 using Sister_Communication.Services.Interfaces;
 
 namespace Sister_Communication.Pages;
 
 public sealed class IndexModel(
     ILogger<IndexModel> logger,
-    IGoogleSearchService google,
+    ISerpApiSearchService serpApi,
     ISearchResultStoreService store) : PageModel
 {
     private readonly ILogger<IndexModel> _logger = logger;
-    private readonly IGoogleSearchService _google = google;
     private readonly ISearchResultStoreService _store = store;
     
     [BindProperty]
@@ -27,18 +27,21 @@ public sealed class IndexModel(
     public List<SearchResult> Results { get; private set; } = new();
 
     /// <summary>
-    /// Handles GET requests to initialize the page with default data or state.
+    /// Handles the GET request for the page and performs any necessary initialization or setup.
+    /// This method is called when the page is loaded via an HTTP GET request.
     /// </summary>
-    /// <returns>A completed task representing the asynchronous operation.</returns>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public Task OnGetAsync() => Task.CompletedTask;
 
     /// <summary>
-    /// Handles the search operation triggered by a POST request. Validates the search term,
-    /// performs a Google search, stores the results, and prepares them for display.
+    /// Handles the search postback by validating the search term, fetching results using the search API,
+    /// and updating the search result store with the latest results.
     /// </summary>
-    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
-    /// <returns>An <see cref="IActionResult"/> that represents the state of the search operation.
-    /// Returns the current page with updated search results, or the page with validation errors if the search term is invalid.</returns>
+    /// <param name="cancellationToken">Token for canceling the asynchronous operation.</param>
+    /// <returns>
+    /// An <see cref="IActionResult"/> that renders the current page with the updated search results.
+    /// Returns the current page with a validation error if the search term is not provided.
+    /// </returns>
     public async Task<IActionResult> OnPostSearchAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(SearchTerm))
@@ -49,7 +52,7 @@ public sealed class IndexModel(
 
         var query = SearchTerm.Trim();
         
-        var items = await _google.SearchAsync(query, maxResults: 100, cancellationToken);
+        var items = await serpApi.SearchAsync(query, maxResults: 100, cancellationToken);
 
         await _store.ReplaceResultsForQueryAsync(query, items, cancellationToken);
 
@@ -60,16 +63,11 @@ public sealed class IndexModel(
     }
 
     /// <summary>
-    /// Filters previously stored search results based on the provided filter term
-    /// and updates the filtered results for the current query.
+    /// Filters the search results from the database using the specified filter term
+    /// and updates the current search results list.
     /// </summary>
-    /// <param name="cancellationToken">
-    /// A cancellation token that can be used by other objects or threads to receive
-    /// notice of cancellation.
-    /// </param>
-    /// <returns>
-    /// An <see cref="IActionResult"/> that re-renders the current page with the filtered results.
-    /// </returns>
+    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+    /// <returns>A Task that resolves to an <see cref="IActionResult"/> representing the updated page with filtered results.</returns>
     public async Task<IActionResult> OnPostDbFilterAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(DbFilterTerm))

@@ -1,7 +1,6 @@
 ﻿namespace Sister_Communication.Options;
 
-public sealed class GoogleOptions
+public sealed class SerpApiOptions
 {
     public string ApiKey { get; init; } = null!;
-    public string Cx { get; init; } = null!;
 }

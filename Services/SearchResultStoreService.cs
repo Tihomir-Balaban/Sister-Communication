@@ -9,18 +9,9 @@ namespace Sister_Communication.Services;
 public sealed class SearchResultStoreService(SisterCommunicationDbContext dbContext) : ISearchResultStoreService
 {
     private readonly SisterCommunicationDbContext _dbContext = dbContext;
-
-    /// <summary>
-    /// Replaces stored search results for a given query with new results provided as input.
-    /// Existing results for the query are deleted and replaced with the new results.
-    /// </summary>
-    /// <param name="query">The search query string to identify the results to replace. Cannot be null, empty, or whitespace.</param>
-    /// <param name="items">A list of new search results containing details about the query results to store. Cannot be null.</param>
-    /// <param name="cancellationToken">A token to observe while waiting for the task to complete. Optional.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    /// <exception cref="ArgumentException">Thrown if the provided query is null, empty, or consists only of whitespace.</exception>
+    
     public async Task ReplaceResultsForQueryAsync(string query,
-        IReadOnlyList<GoogleSearchItemDto> items,
+        IReadOnlyList<SerpApiOrganicResultDto> items,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(query))
@@ -52,7 +43,6 @@ public sealed class SearchResultStoreService(SisterCommunicationDbContext dbCont
             Url = i.Link,
             Title = i.Title,
             Snippet = i.Snippet,
-            DisplayLink = i.DisplayLink,
             Position = i.Position,
             FetchedAtUtc = now
         }).ToList();
@@ -63,10 +53,10 @@ public sealed class SearchResultStoreService(SisterCommunicationDbContext dbCont
         await tx.CommitAsync(cancellationToken);
     }
 
-    /// Retrieves the list of search results stored for a specified query.
-    /// <param name="query">The query string used to search for results. This value will be trimmed of any surrounding whitespace before usage.</param>
-    /// <param name="cancellationToken">Optional. A CancellationToken to observe while waiting for the task to complete.</param>
-    /// <return>Returns a list of <c>SearchResult</c> objects for the specified query, ordered by their position.</return>
+    /// Asynchronously retrieves a list of search results for the specified query. The results are ordered by their position.
+    /// <param name="query">The search query to filter results with. It will be trimmed of any whitespace.</param>
+    /// <param name="cancellationToken">A token that can be used to cancel the asynchronous operation.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains a list of <c>SearchResult</c> objects corresponding to the provided query.</returns>
     public Task<List<SearchResult>> GetResultsForQueryAsync(string query, CancellationToken cancellationToken = default)
     {
         query = query.Trim();
@@ -78,12 +68,20 @@ public sealed class SearchResultStoreService(SisterCommunicationDbContext dbCont
     }
 
     /// <summary>
-    /// Filters the search results based on the specified query and URL substring.
+    /// Filters the search results based on the specified query and a partial match term for URLs.
     /// </summary>
-    /// <param name="query">The search query to filter results by, or null to include results with any query.</param>
-    /// <param name="likeTerm">The substring to match URLs against. This value is required and must not be empty after trimming.</param>
-    /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-    /// <returns>A task that represents the asynchronous operation. The task result contains a list of <see cref="SearchResult"/> objects that match the given criteria.</returns>
+    /// <param name="query">
+    /// An optional search query to filter the results. If null or whitespace, no query filtering is applied.
+    /// </param>
+    /// <param name="likeTerm">
+    /// A term to filter results by matching it against the URLs. Must not be null or whitespace.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A token to monitor for cancellation requests.
+    /// </param>
+    /// <returns>
+    /// A task representing the asynchronous operation. The task result contains a list of filtered search results ordered by position.
+    /// </returns>
     public Task<List<SearchResult>> FilterResultsAsync(string? query, string likeTerm, CancellationToken cancellationToken = default)
     {
         likeTerm = likeTerm.Trim();
