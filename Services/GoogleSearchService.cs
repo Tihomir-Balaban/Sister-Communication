@@ -16,6 +16,17 @@ public sealed class GoogleSearchService(HttpClient http, IOptions<GoogleOptions>
         PropertyNameCaseInsensitive = true
     };
 
+    /// <summary>
+    /// Searches for results using the Google Custom Search JSON API with the specified query.
+    /// </summary>
+    /// <param name="query">The search query string to execute. Cannot be null or whitespace.</param>
+    /// <param name="maxResults">The maximum number of results to retrieve. Defaults to 100.</param>
+    /// <param name="cancellationToken">A token to cancel the operation. Defaults to <see cref="CancellationToken.None"/>.</param>
+    /// <returns>A read-only list of <see cref="GoogleSearchItemDto"/> containing the search results.</returns>
+    /// <exception cref="ArgumentException">Thrown when the query is null, empty, or whitespace.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when API configuration is missing or invalid.</exception>
+    /// <exception cref="HttpRequestException">Thrown when the API request is unsuccessful.</exception>
+    /// <exception cref="TaskCanceledException">Thrown when the operation is canceled via the <paramref name="cancellationToken"/>.</exception>
     public async Task<IReadOnlyList<GoogleSearchItemDto>> SearchAsync(
         string query, 
         int maxResults = 100, 

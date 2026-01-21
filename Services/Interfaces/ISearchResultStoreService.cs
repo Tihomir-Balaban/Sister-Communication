@@ -13,4 +13,9 @@ public interface ISearchResultStoreService
     Task<List<SearchResult>> GetResultsForQueryAsync(
         string query,
         CancellationToken cancellationToken = default);
+    
+    Task<List<SearchResult>> FilterResultsAsync(
+        string? query,
+        string likeTerm,
+        CancellationToken cancellationToken = default);
 }
