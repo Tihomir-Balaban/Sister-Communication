@@ -4,6 +4,9 @@ namespace Sister_Communication.DTOs;
 
 public sealed class GoogleSearchItemDto
 {
+    [JsonPropertyName("position")]
+    public required int Position { get; init; }
+    
     [JsonPropertyName("link")]
     public string? Link { get; init; }
 

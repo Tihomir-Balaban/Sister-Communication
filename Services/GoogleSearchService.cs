@@ -27,8 +27,9 @@ public sealed class GoogleSearchService(HttpClient http, IOptions<GoogleOptions>
         if (string.IsNullOrWhiteSpace(_options.ApiKey) || string.IsNullOrWhiteSpace(_options.Cx))
             throw new InvalidOperationException("Google API configuration missing. Set Google:ApiKey and Google:Cx.");
         
-        
         var results = new List<GoogleSearchItemDto>(capacity: Math.Min(maxResults, 100));
+        int position = 1;
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         
         for (var start = 1; results.Count < maxResults && start <= 91; start += 10)
         {   
@@ -68,12 +69,27 @@ public sealed class GoogleSearchService(HttpClient http, IOptions<GoogleOptions>
 
             foreach (var item in items)
             {
-                if (!string.IsNullOrWhiteSpace(item.Link))
-                    results.Add(item);
-
+                if (string.IsNullOrWhiteSpace(item.Link))
+                    continue;
+                
+                if (!seen.Add(item.Link))
+                    continue;
+                
                 if (results.Count >= maxResults)
                     break;
+                
+                results.Add(new GoogleSearchItemDto()
+                {
+                    Position = position++,
+                    Link = item.Link,
+                    Title = item.Title,
+                    Snippet = item.Snippet,
+                    DisplayLink = item.DisplayLink
+                });
             }
+            
+            if (items.Count < num)
+                break;
         }
 
         return results;
