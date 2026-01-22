@@ -1,9 +1,15 @@
 bin/
 obj/
+.idea/
 /packages/
 riderModule.iml
 /_ReSharper.Caches/
 development.xml
-.idea/
 /Sister Communication.sln.DotSettings.user
-
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+applicationhost.config
+appsettings.Development.json
