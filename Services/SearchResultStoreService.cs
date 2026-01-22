@@ -11,7 +11,8 @@ public sealed class SearchResultStoreService(SisterCommunicationDbContext dbCont
 {
     private readonly SisterCommunicationDbContext _dbContext = dbContext;
     
-    public async Task ReplaceResultsForQueryAsync(string query,
+    public async Task ReplaceResultsForQueryAsync(
+        string query,
         IReadOnlyList<SerpApiOrganicResultDto> items,
         CancellationToken cancellationToken = default)
     {
@@ -58,7 +59,9 @@ public sealed class SearchResultStoreService(SisterCommunicationDbContext dbCont
     /// <param name="query">The search query to filter results with. It will be trimmed of any whitespace.</param>
     /// <param name="cancellationToken">A token that can be used to cancel the asynchronous operation.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains a list of <c>SearchResult</c> objects corresponding to the provided query.</returns>
-    public Task<List<SearchResult>> GetResultsForQueryAsync(string query, CancellationToken cancellationToken = default)
+    public Task<List<SearchResult>> GetResultsForQueryAsync(
+        string query,
+        CancellationToken cancellationToken = default)
     {
         query = query.Trim();
 
@@ -83,7 +86,9 @@ public sealed class SearchResultStoreService(SisterCommunicationDbContext dbCont
     /// <returns>
     /// A task representing the asynchronous operation. The task result contains a list of filtered search results ordered by position.
     /// </returns>
-    public Task<List<SearchResult>> FilterResultsAsync(string? query, string likeTerm, CancellationToken cancellationToken = default)
+    public Task<List<SearchResult>> FilterResultsAsync(string? query,
+        string likeTerm,
+        CancellationToken cancellationToken = default)
     {
         likeTerm = likeTerm.Trim();
 
@@ -110,7 +115,7 @@ public sealed class SearchResultStoreService(SisterCommunicationDbContext dbCont
     /// <param name="cancellationToken">A token that can be used to cancel the asynchronous operation.</param>
     /// <returns>A task that represents the asynchronous operation. The task result contains a tuple with the matched query
     /// and a list of <c>SearchResult</c> objects, or null if no relevant results are found.</returns>
-    public async Task<(string MatchedQuery, List<SearchResult> Results, bool ExactExists)?> TryGetCachedResultsAsync(
+    public async Task<(string MatchedQuery, List<SearchResult> Results)?> TryGetCachedResultsAsync(
     string query,
     CancellationToken cancellationToken = default)
     {
@@ -125,38 +130,9 @@ public sealed class SearchResultStoreService(SisterCommunicationDbContext dbCont
         if (exactExists)
         {
             var exactResults = await GetResultsForQueryAsync(query, cancellationToken);
-            return (query, exactResults, exactExists);
+            return (query, exactResults);
         }
-
-        var candidates = await _dbContext.SearchResults
-            .Where(x =>
-                EF.Functions.Like(x.Query, $"%{query}%") ||
-                EF.Functions.Like(query, $"%{x.Query}%"))
-            .GroupBy(x => x.Query)
-            .Select(g => new
-            {
-                Query = g.Key,
-                Latest = g.Max(r => r.FetchedAtUtc)
-            })
-            .ToListAsync(cancellationToken);
-
-        if (candidates.Count == 0)
-            return null;
-
-        var best = candidates
-            .Select(x => new
-            {
-                x.Query,
-                x.Latest,
-                Score = DU.Score(query, x.Query),
-                LengthDiff = Math.Abs(x.Query.Length - query.Length)
-            })
-            .OrderBy(x => x.Score)
-            .ThenBy(x => x.LengthDiff)
-            .ThenByDescending(x => x.Latest)
-            .First();
-
-        var results = await GetResultsForQueryAsync(best.Query, cancellationToken);
-        return (best.Query, results, exactExists);
+        
+        return null;
     }
 }

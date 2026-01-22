@@ -57,8 +57,7 @@ public sealed class IndexModel(
             CurrentQuery = cached.Value.MatchedQuery;
             Results.AddRange(cached.Value.Results);
             
-            if (cached.Value.ExactExists)
-                return Page();
+            return Page();
         }
         
         var items = await serpApi.SearchAsync(query, maxResults: 100, cancellationToken);

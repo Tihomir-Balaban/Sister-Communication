@@ -19,7 +19,7 @@ public interface ISearchResultStoreService
         string likeTerm,
         CancellationToken cancellationToken = default);
     
-    Task<(string MatchedQuery, List<SearchResult> Results, bool ExactExists)?> TryGetCachedResultsAsync(
+    Task<(string MatchedQuery, List<SearchResult> Results)?> TryGetCachedResultsAsync(
         string query,
         CancellationToken cancellationToken = default);
 }
