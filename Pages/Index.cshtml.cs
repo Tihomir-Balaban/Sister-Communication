@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Sister_Communication.Data;
@@ -15,7 +16,7 @@ public sealed class IndexModel(
     private readonly ILogger<IndexModel> _logger = logger;
     private readonly ISearchResultStoreService _store = store;
     
-    [BindProperty]
+    [BindProperty, Required]
     public string? SearchTerm { get; set; }
 
     [BindProperty]
@@ -106,7 +107,13 @@ public sealed class IndexModel(
     {
         if (string.IsNullOrWhiteSpace(CurrentQuery))
             return Page();
-
+        
+        if (string.IsNullOrWhiteSpace(SearchTerm))
+        {
+            ModelState.AddModelError(nameof(SearchTerm), "Please enter a search term.");
+            return Page();
+        }
+        
         DbFilterTerm = null;
         Results = await _store.GetResultsForQueryAsync(CurrentQuery, ct);
         return Page();
