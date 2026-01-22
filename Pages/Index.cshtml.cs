@@ -16,7 +16,7 @@ public sealed class IndexModel(
     private readonly ILogger<IndexModel> _logger = logger;
     private readonly ISearchResultStoreService _store = store;
     
-    [BindProperty, Required]
+    [BindProperty]
     public string? SearchTerm { get; set; }
 
     [BindProperty]
@@ -27,14 +27,24 @@ public sealed class IndexModel(
 
     public List<SearchResult> Results { get; private set; } = new();
     
-    public string? StatusMessage { get; private set; }
+    [TempData]
+    public string? StatusMessage { get; set; }
+
+    [TempData]
+    public string? StatusKind { get; set; }
 
     /// <summary>
     /// Handles the GET request for the page and performs any necessary initialization or setup.
     /// This method is called when the page is loaded via an HTTP GET request.
     /// </summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    public Task OnGetAsync() => Task.CompletedTask;
+    public Task OnGetAsync()
+    {
+        Results = [];
+        StatusMessage = null;
+        
+        return Task.CompletedTask;
+    }
 
     /// <summary>
     /// Handles the POST request for performing a search operation using the specified search term.
@@ -60,16 +70,36 @@ public sealed class IndexModel(
             
             return Page();
         }
-        
-        var items = await serpApi.SearchAsync(query, maxResults: 100, cancellationToken);
 
-        await _store.ReplaceResultsForQueryAsync(query, items, cancellationToken);
+        try
+        {
+            var items = await serpApi.SearchAsync(query, 100, cancellationToken);
 
-        CurrentQuery = query;
-        var results = await _store.GetResultsForQueryAsync(query, cancellationToken);
+            if (items.Count == 0)
+            {
+                StatusKind = "warning";
+                StatusMessage = $"No results returned for: {query}";
+                Results = new List<SearchResult>();
+                return Page();
+            }
 
-        Results.AddRange(Results);
-        return Page();
+            await _store.ReplaceResultsForQueryAsync(query, items, cancellationToken);
+
+            CurrentQuery = query;
+            Results = await _store.GetResultsForQueryAsync(query, cancellationToken);
+
+            StatusKind = "success";
+            StatusMessage = $"Fetched and stored results for: {CurrentQuery}";
+
+            return Page();
+        }
+        catch (Exception ex)
+        {
+            StatusKind = "error";
+            StatusMessage = $"Search failed: {ex.Message}";
+            Results = [];
+            return Page();
+        }
     }
 
     /// <summary>
@@ -93,7 +123,18 @@ public sealed class IndexModel(
         }
         
         Results = await _store.FilterResultsAsync(CurrentQuery, DbFilterTerm, cancellationToken);
-
+        
+        if (Results.Count == 0)
+        {
+            StatusKind = "warning";
+            StatusMessage = $"No results matched the DB filter: {DbFilterTerm}";
+        }
+        else
+        {
+            StatusKind = "info";
+            StatusMessage = $"Filtered results for '{CurrentQuery}' using LIKE: {DbFilterTerm}";
+        }
+        
         return Page();
     }
 

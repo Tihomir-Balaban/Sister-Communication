@@ -32,7 +32,16 @@
 
     @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
     {
-        <div style="margin: 8px 0; font-weight: bold;">
+        var kind = Model.StatusKind ?? "info";
+        var color = kind switch
+        {
+            "success" => "green",
+            "warning" => "darkorange",
+            "error"   => "crimson",
+            _         => "black"
+        };
+
+        <div style="margin: 8px 0; font-weight: bold; color: @color;">
             @Model.StatusMessage
         </div>
     }
