@@ -115,13 +115,7 @@ public sealed class IndexModel(
             ModelState.AddModelError(nameof(DbFilterTerm), "Please enter a filter term.");
             return Page();
         }
-        
-        if (string.IsNullOrWhiteSpace(CurrentQuery))
-        {
-            ModelState.AddModelError(string.Empty, "Please run a search first so there are results to filter.");
-            return Page();
-        }
-        
+
         Results = await _store.FilterResultsAsync(CurrentQuery, DbFilterTerm, cancellationToken);
         
         if (Results.Count == 0)

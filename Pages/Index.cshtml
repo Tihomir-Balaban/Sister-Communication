@@ -2,79 +2,86 @@
 @model Sister_Communication.Pages.IndexModel
 
 <h1>Sister Communication</h1>
+<div class="container-lg mt-4">
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                <div style="margin-bottom: 12px;">
+                    <label>Search</label><br />
+                    <input asp-for="SearchTerm" />
+                    <button type="submit" asp-page-handler="Search">Search</button>
+                    <span asp-validation-for="SearchTerm"></span>
+                </div>
 
-<form method="post">
-    <div style="margin-bottom: 12px;">
-        <label>Google search term</label><br />
-        <input asp-for="SearchTerm" />
-        <button type="submit" asp-page-handler="Search">Search</button>
-        <span asp-validation-for="SearchTerm"></span>
-    </div>
+                <div style="margin-bottom: 12px;">
+                    <label>Filter URLs in DB (SQL LIKE)</label><br />
+                    <input asp-for="DbFilterTerm" />
+                    <button type="submit" asp-page-handler="DbFilter">Filter</button>
+                    <button type="submit" asp-page-handler="ClearDbFilter">Clear DB filter</button>
+                    <span asp-validation-for="DbFilterTerm"></span>
+                </div>
 
-    <div style="margin-bottom: 12px;">
-        <label>Filter URLs in DB (SQL LIKE)</label><br />
-        <input asp-for="DbFilterTerm" />
-        <button type="submit" asp-page-handler="DbFilter">Filter</button>
-        <button type="submit" asp-page-handler="ClearDbFilter">Clear DB filter</button>
-        <span asp-validation-for="DbFilterTerm"></span>
-    </div>
+                <input type="hidden" asp-for="CurrentQuery" />
 
-    <input type="hidden" asp-for="CurrentQuery" />
+                <hr />
 
-    <hr />
+                <div style="margin: 12px 0;">
+                    <label>Realtime filter (frontend only)</label><br />
+                    <input id="realtimeFilter" type="text" placeholder="Type to filter displayed results..." />
+                    <button id="clearRealtimeFilter" type="button">Clear filter</button>
+                    <button id="toggleSort" type="button" data-sort="asc">Sort A → Z</button>
+                </div>
 
-    <div style="margin: 12px 0;">
-        <label>Realtime filter (frontend only)</label><br />
-        <input id="realtimeFilter" type="text" placeholder="Type to filter displayed results..." />
-        <button id="clearRealtimeFilter" type="button">Clear filter</button>
-        <button id="toggleSort" type="button" data-sort="asc">Sort A → Z</button>
-    </div>
+                @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+                {
+                    var kind = Model.StatusKind ?? "info";
+                    var color = kind switch
+                    {
+                        "success" => "green",
+                        "warning" => "darkorange",
+                        "error"   => "crimson",
+                        _         => "black"
+                    };
 
-    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
-    {
-        var kind = Model.StatusKind ?? "info";
-        var color = kind switch
-        {
-            "success" => "green",
-            "warning" => "darkorange",
-            "error"   => "crimson",
-            _         => "black"
-        };
+                    <div style="margin: 8px 0; font-weight: bold; color: @color;">
+                        @Model.StatusMessage
+                    </div>
+                }
 
-        <div style="margin: 8px 0; font-weight: bold; color: @color;">
-            @Model.StatusMessage
+                @if (Model.Results.Any())
+                {
+                    <table id="resultsTable">
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Title</th>
+                            <th>URL</th>
+                            <th>Description</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var r in Model.Results)
+                        {
+                            <tr>
+                                <td>@r.Position</td>
+                                <td>@r.Title</td>
+                                <td><a href="@r.Url" target="_blank">@r.Url</a></td>
+                                <td>@r.Snippet</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                }
+            </form>
         </div>
-    }
+    </div>
+</div>
 
-    @if (Model.Results.Any())
-    {
-        <table id="resultsTable">
-            <thead>
-            <tr>
-                <th>#</th>
-                <th>Title</th>
-                <th>URL</th>
-                <th>DisplayLink</th>
-            </tr>
-            </thead>
-            <tbody>
-            @foreach (var r in Model.Results)
-            {
-                <tr>
-                    <td>@r.Position</td>
-                    <td>@r.Title</td>
-                    <td><a href="@r.Url" target="_blank">@r.Url</a></td>
-                    <td>@r.DisplayLink</td>
-                </tr>
-            }
-            </tbody>
-        </table>
-    }
-</form>
+
 
 @section Scripts
 {
-    <script>
+    <script>'use strict';
         (function () {
             const filterInput = document.getElementById('realtimeFilter');
             const clearBtn = document.getElementById('clearRealtimeFilter');
@@ -85,7 +92,6 @@
 
             const tbody = table.querySelector('tbody');
             const getRows = () => Array.from(tbody.querySelectorAll('tr'));
-
             function rowText(row) {
                 return row.innerText.toLowerCase();
             }
