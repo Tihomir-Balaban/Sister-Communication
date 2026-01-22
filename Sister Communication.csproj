@@ -5,6 +5,7 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <RootNamespace>Sister_Communication</RootNamespace>
+        <UserSecretsId>0b1b71bc-01f8-4bb2-8bc7-a1d80d88f787</UserSecretsId>
   </PropertyGroup>
 
     <ItemGroup>
